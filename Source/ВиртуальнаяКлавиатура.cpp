@@ -1,7 +1,7 @@
 #include "../Include/ВиртуальнаяКлавиатура.h"
 //
-// Раскладка клавиатуры: текст на кнопке, заглавный вариант (для букв), тип клавиши, ширина
-const TVirtualKeyboard::TKeySpec TVirtualKeyboard::FKeyboardLayout[] =
+// Раскладка клавиатуры (русская): текст на кнопке, заглавный вариант (для букв), тип клавиши, ширина
+const TVirtualKeyboard::TKeySpec TVirtualKeyboard::FKeyboardLayoutRussian[] =
 {
     { L"1", nullptr, TKeyKind::characterKey, 1 },
     { L"2", nullptr, TKeyKind::characterKey, 1 },
@@ -59,21 +59,85 @@ const TVirtualKeyboard::TKeySpec TVirtualKeyboard::FKeyboardLayout[] =
     //
     { L"CapsLock", nullptr, TKeyKind::capsLockKey, 1 },
     { L"Space", nullptr, TKeyKind::spaceKey, 3 },
-    { L"Enter", nullptr, TKeyKind::enterKey, 1 }
+    { L"Enter", nullptr, TKeyKind::enterKey, 1 },
+    { L"EN", nullptr, TKeyKind::layoutSwitchKey, 1 }             // НОВОЕ: переключение на английскую раскладку
 };
 //
-const int TVirtualKeyboard::FKeyboardLayoutSize = static_cast<int>(sizeof(FKeyboardLayout) / sizeof(FKeyboardLayout[0]));
+const int TVirtualKeyboard::FKeyboardLayoutRussianSize =
+static_cast<int>(sizeof(FKeyboardLayoutRussian) / sizeof(FKeyboardLayoutRussian[0]));
 //
-static const int FRowStarts[] = { 0, 10, 21, 31, 40, 49, 52 };
-static const int FRowCount = 6;
+const int TVirtualKeyboard::FRowStartsRussian[] = { 0, 10, 21, 31, 40, 49, 53 };
+const int TVirtualKeyboard::FRowCountRussian = 6;
+//
+// Раскладка клавиатуры (английская): те же цифры и служебные клавиши, латинские буквы вместо кириллицы
+const TVirtualKeyboard::TKeySpec TVirtualKeyboard::FKeyboardLayoutEnglish[] =
+{
+    { L"1", nullptr, TKeyKind::characterKey, 1 },
+    { L"2", nullptr, TKeyKind::characterKey, 1 },
+    { L"3", nullptr, TKeyKind::characterKey, 1 },
+    { L"4", nullptr, TKeyKind::characterKey, 1 },
+    { L"5", nullptr, TKeyKind::characterKey, 1 },
+    { L"6", nullptr, TKeyKind::characterKey, 1 },
+    { L"7", nullptr, TKeyKind::characterKey, 1 },
+    { L"8", nullptr, TKeyKind::characterKey, 1 },
+    { L"9", nullptr, TKeyKind::characterKey, 1 },
+    { L"Backspace", nullptr, TKeyKind::backspaceKey, 1 },
+    //
+    { L"q", L"Q", TKeyKind::characterKey, 1 },
+    { L"w", L"W", TKeyKind::characterKey, 1 },
+    { L"e", L"E", TKeyKind::characterKey, 1 },
+    { L"r", L"R", TKeyKind::characterKey, 1 },
+    { L"t", L"T", TKeyKind::characterKey, 1 },
+    { L"y", L"Y", TKeyKind::characterKey, 1 },
+    { L"u", L"U", TKeyKind::characterKey, 1 },
+    { L"i", L"I", TKeyKind::characterKey, 1 },
+    { L"o", L"O", TKeyKind::characterKey, 1 },
+    { L"p", L"P", TKeyKind::characterKey, 1 },
+    //
+    { L"a", L"A", TKeyKind::characterKey, 1 },
+    { L"s", L"S", TKeyKind::characterKey, 1 },
+    { L"d", L"D", TKeyKind::characterKey, 1 },
+    { L"f", L"F", TKeyKind::characterKey, 1 },
+    { L"g", L"G", TKeyKind::characterKey, 1 },
+    { L"h", L"H", TKeyKind::characterKey, 1 },
+    { L"j", L"J", TKeyKind::characterKey, 1 },
+    { L"k", L"K", TKeyKind::characterKey, 1 },
+    { L"l", L"L", TKeyKind::characterKey, 1 },
+    //
+    { L"z", L"Z", TKeyKind::characterKey, 1 },
+    { L"x", L"X", TKeyKind::characterKey, 1 },
+    { L"c", L"C", TKeyKind::characterKey, 1 },
+    { L"v", L"V", TKeyKind::characterKey, 1 },
+    { L"b", L"B", TKeyKind::characterKey, 1 },
+    { L"n", L"N", TKeyKind::characterKey, 1 },
+    { L"m", L"M", TKeyKind::characterKey, 1 },
+    { L"-", nullptr, TKeyKind::characterKey, 1 },
+    { L"+", nullptr, TKeyKind::characterKey, 1 },
+    { L".", nullptr, TKeyKind::characterKey, 1 },
+    //
+    { L",", nullptr, TKeyKind::characterKey, 1 },
+    { L"!", nullptr, TKeyKind::characterKey, 1 },
+    { L"?", nullptr, TKeyKind::characterKey, 1 },
+    //
+    { L"CapsLock", nullptr, TKeyKind::capsLockKey, 1 },
+    { L"Space", nullptr, TKeyKind::spaceKey, 3 },
+    { L"Enter", nullptr, TKeyKind::enterKey, 1 },
+    { L"RU", nullptr, TKeyKind::layoutSwitchKey, 1 }              // НОВОЕ: переключение на русскую раскладку
+};
+//
+const int TVirtualKeyboard::FKeyboardLayoutEnglishSize =
+static_cast<int>(sizeof(FKeyboardLayoutEnglish) / sizeof(FKeyboardLayoutEnglish[0]));
+//
+const int TVirtualKeyboard::FRowStartsEnglish[] = { 0, 10, 20, 29, 39, 42, 46 };
+const int TVirtualKeyboard::FRowCountEnglish = 6;
 //
 TVirtualKeyboard::TVirtualKeyButton::TVirtualKeyButton(const String& _buttonText,
-                                                       const KeyPress& _keyPress,
-                                                       TKeyKind _kind)
+    const KeyPress& _keyPress,
+    TKeyKind _kind)
     : TextButton(_buttonText),
-      FKind(_kind),
-      FKeyPress(_keyPress),
-      FIsCapsLockActive(false)
+    FKind(_kind),
+    FKeyPress(_keyPress),
+    FIsCapsLockActive(false)
 {
     if (_keyPress.isValid())
         addShortcut(_keyPress);
@@ -91,17 +155,48 @@ void TVirtualKeyboard::TVirtualKeyButton::updateCapsLockVisual(bool _isCapsLockO
 //
 TVirtualKeyboard::TVirtualKeyboard(void)
     : FCapsLockOn(false),
-      FKeyGap(6),
-      FRowGap(8)
+    FCurrentLayout(TLayoutKind::russian),
+    FKeyGap(6),
+    FRowGap(8)
 {
     createKeys();
 }
 //
+bool TVirtualKeyboard::isEnglishLayout(void) const
+{
+    return FCurrentLayout == TLayoutKind::english;
+}
+//
+const TVirtualKeyboard::TKeySpec* TVirtualKeyboard::getActiveLayoutData(void) const
+{
+    return (FCurrentLayout == TLayoutKind::russian) ? FKeyboardLayoutRussian : FKeyboardLayoutEnglish;
+}
+//
+int TVirtualKeyboard::getActiveLayoutSize(void) const
+{
+    return (FCurrentLayout == TLayoutKind::russian) ? FKeyboardLayoutRussianSize : FKeyboardLayoutEnglishSize;
+}
+//
+const int* TVirtualKeyboard::getActiveRowStarts(void) const
+{
+    return (FCurrentLayout == TLayoutKind::russian) ? FRowStartsRussian : FRowStartsEnglish;
+}
+//
+int TVirtualKeyboard::getActiveRowCount(void) const
+{
+    return (FCurrentLayout == TLayoutKind::russian) ? FRowCountRussian : FRowCountEnglish;
+}
+//
 void TVirtualKeyboard::createKeys(void)
 {
-    for (int index = 0; index < FKeyboardLayoutSize; ++index)
+    FKeyButtons.clear(); // при повторном вызове (смена раскладки) сначала удаляем старые кнопки
+    //
+    const TKeySpec* layoutData = getActiveLayoutData();
+    const int layoutSize = getActiveLayoutSize();
+    //
+    for (int index = 0; index < layoutSize; ++index)
     {
-        const TKeySpec& keySpec = FKeyboardLayout[index];
+        const TKeySpec& keySpec = layoutData[index];
         const String buttonLabel = makeLabelForSpec(keySpec);
         const KeyPress keyPress = makeKeyPressForSpec(keySpec);
         //
@@ -120,28 +215,29 @@ KeyPress TVirtualKeyboard::makeKeyPressForSpec(const TKeySpec& _keySpec) const
 {
     switch (_keySpec.FKind)
     {
-        case TKeyKind::backspaceKey:
-            return KeyPress(KeyPress::backspaceKey, ModifierKeys(), 0);
+    case TKeyKind::backspaceKey:
+        return KeyPress(KeyPress::backspaceKey, ModifierKeys(), 0);
         //
-        case TKeyKind::enterKey:
-            return KeyPress(KeyPress::returnKey, ModifierKeys(), juce_wchar('\n'));
+    case TKeyKind::enterKey:
+        return KeyPress(KeyPress::returnKey, ModifierKeys(), juce_wchar('\n'));
         //
-        case TKeyKind::spaceKey:
-            return KeyPress(KeyPress::spaceKey, ModifierKeys(), juce_wchar(' '));
+    case TKeyKind::spaceKey:
+        return KeyPress(KeyPress::spaceKey, ModifierKeys(), juce_wchar(' '));
         //
-        case TKeyKind::capsLockKey:
-            return KeyPress();
+    case TKeyKind::capsLockKey:
+    case TKeyKind::layoutSwitchKey:                            // НОВОЕ: у служебной клавиши нет физического аналога
+        return KeyPress();
         //
-        case TKeyKind::characterKey:
-        default:
-        {
-            const wchar_t* text = (FCapsLockOn && _keySpec.FTextUpper != nullptr)
-                ? _keySpec.FTextUpper
-                : _keySpec.FText;
-            const juce_wchar character = text[0];
-            const int keyCode = static_cast<int>(character);
-            return KeyPress(keyCode, ModifierKeys(), character);
-        }
+    case TKeyKind::characterKey:
+    default:
+    {
+        const wchar_t* text = (FCapsLockOn && _keySpec.FTextUpper != nullptr)
+            ? _keySpec.FTextUpper
+            : _keySpec.FText;
+        const juce_wchar character = text[0];
+        const int keyCode = static_cast<int>(character);
+        return KeyPress(keyCode, ModifierKeys(), character);
+    }
     }
 }
 //
@@ -157,10 +253,12 @@ void TVirtualKeyboard::setCapsLockState(bool _isCapsLockOn)
 {
     FCapsLockOn = _isCapsLockOn;
     //
+    const TKeySpec* layoutData = getActiveLayoutData();
+    //
     for (int index = 0; index < FKeyButtons.size(); ++index)
     {
         auto* keyButton = FKeyButtons[index];
-        const TKeySpec& keySpec = FKeyboardLayout[index];
+        const TKeySpec& keySpec = layoutData[index];
         //
         keyButton->setButtonText(makeLabelForSpec(keySpec));
         keyButton->FKeyPress = makeKeyPressForSpec(keySpec);
@@ -171,6 +269,18 @@ void TVirtualKeyboard::setCapsLockState(bool _isCapsLockOn)
         //
         keyButton->updateCapsLockVisual(FCapsLockOn);
     }
+}
+//
+void TVirtualKeyboard::switchLayout(void)                          // НОВОЕ
+{
+    FCurrentLayout = (FCurrentLayout == TLayoutKind::russian) ? TLayoutKind::english : TLayoutKind::russian;
+    FCapsLockOn = false; // при смене раскладки сбрасываем CapsLock, чтобы не путать регистр между алфавитами
+    //
+    createKeys();
+    layoutKeys();
+    //
+    if (FOnLayoutChange != nullptr)
+        FOnLayoutChange();
 }
 //
 void TVirtualKeyboard::handleKeyButtonClick(TVirtualKeyButton* _button)
@@ -186,6 +296,12 @@ void TVirtualKeyboard::handleKeyButtonClick(TVirtualKeyButton* _button)
         if (FOnCapsLockToggle != nullptr)
             FOnCapsLockToggle();
         //
+        return;
+    }
+    //
+    if (_button->FKind == TKeyKind::layoutSwitchKey)                // НОВОЕ
+    {
+        switchLayout();
         return;
     }
     //
@@ -207,31 +323,36 @@ void TVirtualKeyboard::layoutKeys(void)
 {
     const int areaWidth = getWidth();
     const int areaHeight = getHeight();
-    const int rowHeight = (areaHeight - (FRowCount - 1) * FRowGap) / FRowCount;
+    //
+    const int* rowStarts = getActiveRowStarts();
+    const int rowCount = getActiveRowCount();
+    const TKeySpec* layoutData = getActiveLayoutData();
+    //
+    const int rowHeight = (areaHeight - (rowCount - 1) * FRowGap) / rowCount;
     int currentY = 0;
     //
-    for (int rowIndex = 0; rowIndex < FRowCount; ++rowIndex)
+    for (int rowIndex = 0; rowIndex < rowCount; ++rowIndex)
     {
-        const int rowStart = FRowStarts[rowIndex];
-        const int rowEnd = FRowStarts[rowIndex + 1];
+        const int rowStart = rowStarts[rowIndex];
+        const int rowEnd = rowStarts[rowIndex + 1];
         int totalUnits = 0;
         //
         for (int keyIndex = rowStart; keyIndex < rowEnd; ++keyIndex)
-            totalUnits += FKeyboardLayout[keyIndex].FWidthUnits;
+            totalUnits += layoutData[keyIndex].FWidthUnits;
         //
         const int totalGapWidth = (rowEnd - rowStart - 1) * FKeyGap;
         int totalInternalGapWidth = 0;
         //
         for (int keyIndex = rowStart; keyIndex < rowEnd; ++keyIndex)
-            totalInternalGapWidth += FKeyGap * (FKeyboardLayout[keyIndex].FWidthUnits - 1);
+            totalInternalGapWidth += FKeyGap * (layoutData[keyIndex].FWidthUnits - 1);
         //
         const int unitWidth = (areaWidth - totalGapWidth - totalInternalGapWidth) / jmax(1, totalUnits);
         int currentX = 0;
         //
         for (int keyIndex = rowStart; keyIndex < rowEnd; ++keyIndex)
         {
-            const int keyWidth = unitWidth * FKeyboardLayout[keyIndex].FWidthUnits
-                               + FKeyGap * (FKeyboardLayout[keyIndex].FWidthUnits - 1);
+            const int keyWidth = unitWidth * layoutData[keyIndex].FWidthUnits
+                + FKeyGap * (layoutData[keyIndex].FWidthUnits - 1);
             //
             if (auto* keyButton = FKeyButtons[keyIndex])
                 keyButton->setBounds(currentX, currentY, keyWidth, rowHeight);

@@ -94,11 +94,13 @@ MainComponent::MainComponent(void)
     addAndMakeVisible(FStatusLabel);
     //
     FSaveButton.setButtonText(strSaveButton());
+    FSaveButton.setComponentID("SaveButton");   // НОВОЕ: используется в LookAndFeel для увеличенного шрифта
     FSaveButton.onClick = [this]() { saveTextToFile(); };
     addAndMakeVisible(FSaveButton);
     //
     FVirtualKeyboard.FOnKeyPress = [this](const KeyPress& _keyPress) { sendKeyPressToEditor(_keyPress); };
     FVirtualKeyboard.FOnCapsLockToggle = [this]() { updateStatusBar(); };
+    FVirtualKeyboard.FOnLayoutChange = [this]() { updateStatusBar(); };   // НОВОЕ
     addAndMakeVisible(FVirtualKeyboard);
     //
     FWelcomePanel.FOnStart = [this]() { enterWorkMode(); };
@@ -171,7 +173,8 @@ void MainComponent::updateStatusBar(void)
 {
     const int textLength = FTextEditor.getText().length();
     const String capsLockText = FVirtualKeyboard.isCapsLockOn() ? strCapsLockOn() : strCapsLockOff();
-    const String statusText = capsLockText + strCharCountPrefix() + String(textLength);
+    const String layoutText = FVirtualKeyboard.isEnglishLayout() ? strLayoutEnglish() : strLayoutRussian();
+    const String statusText = layoutText + "     " + capsLockText + strCharCountPrefix() + String(textLength);
     //
     FStatusLabel.setText(statusText, dontSendNotification);
 }

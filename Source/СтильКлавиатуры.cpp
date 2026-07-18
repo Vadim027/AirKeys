@@ -49,8 +49,11 @@ void TKeyboardLookAndFeel::drawButtonBackground(Graphics& g,
     g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
 }
 //
-Font TKeyboardLookAndFeel::getTextButtonFont(TextButton&, int _buttonHeight)
+Font TKeyboardLookAndFeel::getTextButtonFont(TextButton& _button, int _buttonHeight)
 {
+    if (_button.getComponentID() == "SaveButton")
+        return Font(18.0f, Font::bold);
+    //
     const float fontHeight = static_cast<float>(_buttonHeight) * 0.34f;
     return Font(fontHeight);
 }

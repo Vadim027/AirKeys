@@ -16,7 +16,7 @@ public:
                               bool _isMouseOverButton,
                               bool _isButtonDown) override;
     //
-    Font getTextButtonFont(TextButton&, int _buttonHeight) override;
+    Font getTextButtonFont(TextButton& _button, int _buttonHeight) override;
     //
     void drawButtonText(Graphics& g,
                         TextButton& _button,

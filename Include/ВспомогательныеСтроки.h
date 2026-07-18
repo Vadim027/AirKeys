@@ -72,3 +72,15 @@ inline String strEditorPlaceholder(void)
     const std::wstring text(L"Введите текст с помощью виртуальной клавиатуры...");
     return String(text.c_str());
 }
+
+inline String strLayoutRussian(void)
+{
+    const std::wstring text(L"Раскладка: RU");
+    return String(text.c_str());
+}
+//
+inline String strLayoutEnglish(void)
+{
+    const std::wstring text(L"Раскладка: EN");
+    return String(text.c_str());
+}
