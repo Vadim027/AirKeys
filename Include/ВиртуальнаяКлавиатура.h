@@ -124,10 +124,30 @@ private:
         bool FIsCapsLockActive;      ///< Актуально только для кнопки CapsLock — её текущее состояние
         //
         /**
-         * @brief Обновляет визуальное состояние (только для кнопки CapsLock).
+         * @brief Обновляет визуальное состояние клавиши CapsLock.
          * @param _isCapsLockOn Текущее состояние CapsLock.
          */
         void updateCapsLockVisual(bool _isCapsLockOn);
+    };
+    //
+    /**
+     * @class TLayoutSwitchButton
+     * @brief Клавиша выбора раскладки: при удержании показывает меню RU/EN.
+     */
+    class TLayoutSwitchButton : public TVirtualKeyButton, private Timer
+    {
+    public:
+        TLayoutSwitchButton(TVirtualKeyboard& _owner, const String& _buttonText);
+        //
+        void mouseDown(const MouseEvent& _event) override;
+        void mouseUp(const MouseEvent& _event) override;
+        //
+    private:
+        void timerCallback(void) override;
+        //
+        TVirtualKeyboard& FKeyboardOwner;
+        bool FLongPressHandled;
+        static const int FLongPressDelayMs = 450;
     };
     //
     /**
@@ -142,9 +162,16 @@ private:
     void layoutKeys(void);
     //
     /**
-     * @brief Переключает раскладку между русской и английской, пересоздаёт кнопки.
+     * @brief Переключает раскладку на заданную и пересоздаёт кнопки.
+     * @param _layout Целевая раскладка.
      */
-    void switchLayout(void);
+    void setLayout(TLayoutKind _layout);
+    //
+    /**
+     * @brief Показывает всплывающее меню выбора раскладки RU/EN.
+     * @param _targetComponent Компонент, рядом с которым открывается меню.
+     */
+    void showLayoutSelectionMenu(Component* _targetComponent);
     //
     /**
      * @brief Строит объект KeyPress (физический аналог) для заданной клавиши.
@@ -166,6 +193,11 @@ private:
      * @param _button Указатель на нажатую кнопку.
      */
     void handleKeyButtonClick(TVirtualKeyButton* _button);
+    //
+    /**
+     * @brief Обновляет зажатое состояние клавиши CapsLock.
+     */
+    void updateAllToggleVisuals(void);
     //
     /// @brief Возвращает указатель на массив данных текущей активной раскладки.
     const TKeySpec* getActiveLayoutData(void) const;

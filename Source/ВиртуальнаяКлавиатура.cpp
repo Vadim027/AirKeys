@@ -58,15 +58,16 @@ const TVirtualKeyboard::TKeySpec TVirtualKeyboard::FKeyboardLayoutRussian[] =
     { L"?", nullptr, TKeyKind::characterKey, 1 },
     //
     { L"CapsLock", nullptr, TKeyKind::capsLockKey, 1 },
-    { L"Space", nullptr, TKeyKind::spaceKey, 3 },
+    { L"0", nullptr, TKeyKind::characterKey, 1 },
+    { L"Space", nullptr, TKeyKind::spaceKey, 2 },
     { L"Enter", nullptr, TKeyKind::enterKey, 1 },
-    { L"EN", nullptr, TKeyKind::layoutSwitchKey, 1 }             // НОВОЕ: переключение на английскую раскладку
+    { L"Lang", nullptr, TKeyKind::layoutSwitchKey, 1 }
 };
 //
 const int TVirtualKeyboard::FKeyboardLayoutRussianSize =
 static_cast<int>(sizeof(FKeyboardLayoutRussian) / sizeof(FKeyboardLayoutRussian[0]));
 //
-const int TVirtualKeyboard::FRowStartsRussian[] = { 0, 10, 21, 31, 40, 49, 53 };
+const int TVirtualKeyboard::FRowStartsRussian[] = { 0, 10, 21, 31, 40, 49, 54 };
 const int TVirtualKeyboard::FRowCountRussian = 6;
 //
 // Раскладка клавиатуры (английская): те же цифры и служебные клавиши, латинские буквы вместо кириллицы
@@ -120,15 +121,16 @@ const TVirtualKeyboard::TKeySpec TVirtualKeyboard::FKeyboardLayoutEnglish[] =
     { L"?", nullptr, TKeyKind::characterKey, 1 },
     //
     { L"CapsLock", nullptr, TKeyKind::capsLockKey, 1 },
-    { L"Space", nullptr, TKeyKind::spaceKey, 3 },
+    { L"0", nullptr, TKeyKind::characterKey, 1 },
+    { L"Space", nullptr, TKeyKind::spaceKey, 2 },
     { L"Enter", nullptr, TKeyKind::enterKey, 1 },
-    { L"RU", nullptr, TKeyKind::layoutSwitchKey, 1 }              // НОВОЕ: переключение на русскую раскладку
+    { L"Lang", nullptr, TKeyKind::layoutSwitchKey, 1 }
 };
 //
 const int TVirtualKeyboard::FKeyboardLayoutEnglishSize =
 static_cast<int>(sizeof(FKeyboardLayoutEnglish) / sizeof(FKeyboardLayoutEnglish[0]));
 //
-const int TVirtualKeyboard::FRowStartsEnglish[] = { 0, 10, 20, 29, 39, 42, 46 };
+const int TVirtualKeyboard::FRowStartsEnglish[] = { 0, 10, 20, 29, 39, 42, 47 };
 const int TVirtualKeyboard::FRowCountEnglish = 6;
 //
 TVirtualKeyboard::TVirtualKeyButton::TVirtualKeyButton(const String& _buttonText,
@@ -150,6 +152,52 @@ void TVirtualKeyboard::TVirtualKeyButton::updateCapsLockVisual(bool _isCapsLockO
         FIsCapsLockActive = _isCapsLockOn;
         setToggleState(_isCapsLockOn, dontSendNotification);
         repaint();
+    }
+}
+//
+TVirtualKeyboard::TLayoutSwitchButton::TLayoutSwitchButton(TVirtualKeyboard& _owner, const String& _buttonText)
+    : TVirtualKeyButton(_buttonText, KeyPress(), TKeyKind::layoutSwitchKey),
+      FKeyboardOwner(_owner),
+      FLongPressHandled(false)
+{
+    setClickingTogglesState(false);
+}
+//
+void TVirtualKeyboard::TLayoutSwitchButton::mouseDown(const MouseEvent& _event)
+{
+    TextButton::mouseDown(_event);
+    FLongPressHandled = false;
+    startTimer(FLongPressDelayMs);
+}
+//
+void TVirtualKeyboard::TLayoutSwitchButton::mouseUp(const MouseEvent& _event)
+{
+    TextButton::mouseUp(_event);
+    stopTimer();
+    //
+    if (!FLongPressHandled)
+        setToggleState(false, dontSendNotification);
+}
+//
+void TVirtualKeyboard::TLayoutSwitchButton::timerCallback(void)
+{
+    stopTimer();
+    FLongPressHandled = true;
+    setToggleState(true, dontSendNotification);
+    repaint();
+    FKeyboardOwner.showLayoutSelectionMenu(this);
+}
+//
+void TVirtualKeyboard::updateAllToggleVisuals(void)
+{
+    for (int index = 0; index < FKeyButtons.size(); ++index)
+    {
+        auto* keyButton = FKeyButtons[index];
+        //
+        if (keyButton->FKind == TKeyKind::capsLockKey)
+            keyButton->updateCapsLockVisual(FCapsLockOn);
+        else if (keyButton->FKind == TKeyKind::layoutSwitchKey)
+            keyButton->setToggleState(false, dontSendNotification);
     }
 }
 //
@@ -200,8 +248,12 @@ void TVirtualKeyboard::createKeys(void)
         const String buttonLabel = makeLabelForSpec(keySpec);
         const KeyPress keyPress = makeKeyPressForSpec(keySpec);
         //
-        auto* keyButton = new TVirtualKeyButton(buttonLabel, keyPress, keySpec.FKind);
-        keyButton->onClick = [this, keyButton]() { handleKeyButtonClick(keyButton); };
+        auto* keyButton = (keySpec.FKind == TKeyKind::layoutSwitchKey)
+            ? static_cast<TVirtualKeyButton*>(new TLayoutSwitchButton(*this, makeLabelForSpec(keySpec)))
+            : new TVirtualKeyButton(buttonLabel, keyPress, keySpec.FKind);
+        //
+        if (keySpec.FKind != TKeyKind::layoutSwitchKey)
+            keyButton->onClick = [this, keyButton]() { handleKeyButtonClick(keyButton); };
         //
         if (keySpec.FKind == TKeyKind::capsLockKey)
             keyButton->setClickingTogglesState(false);
@@ -209,6 +261,8 @@ void TVirtualKeyboard::createKeys(void)
         addAndMakeVisible(keyButton);
         FKeyButtons.add(keyButton);
     }
+    //
+    updateAllToggleVisuals();
 }
 //
 KeyPress TVirtualKeyboard::makeKeyPressForSpec(const TKeySpec& _keySpec) const
@@ -266,21 +320,52 @@ void TVirtualKeyboard::setCapsLockState(bool _isCapsLockOn)
         //
         if (keyButton->FKeyPress.isValid())
             keyButton->addShortcut(keyButton->FKeyPress);
-        //
-        keyButton->updateCapsLockVisual(FCapsLockOn);
     }
+    //
+    updateAllToggleVisuals();
 }
 //
-void TVirtualKeyboard::switchLayout(void)                          // НОВОЕ
+void TVirtualKeyboard::setLayout(TLayoutKind _layout)
 {
-    FCurrentLayout = (FCurrentLayout == TLayoutKind::russian) ? TLayoutKind::english : TLayoutKind::russian;
-    FCapsLockOn = false; // при смене раскладки сбрасываем CapsLock, чтобы не путать регистр между алфавитами
+    if (FCurrentLayout == _layout)
+        return;
+    //
+    FCurrentLayout = _layout;
+    FCapsLockOn = false;
     //
     createKeys();
     layoutKeys();
     //
     if (FOnLayoutChange != nullptr)
         FOnLayoutChange();
+}
+//
+void TVirtualKeyboard::showLayoutSelectionMenu(Component* _targetComponent)
+{
+    PopupMenu layoutMenu;
+    //
+    layoutMenu.addItem(1, strLayoutRussian(), true, FCurrentLayout == TLayoutKind::russian);
+    layoutMenu.addItem(2, strLayoutEnglish(), true, FCurrentLayout == TLayoutKind::english);
+    //
+    Component::SafePointer<Component> safeTarget(_targetComponent);
+    //
+    layoutMenu.showMenuAsync(PopupMenu::Options().withTargetComponent(_targetComponent),
+        [this, safeTarget](int _result)
+        {
+            if (safeTarget != nullptr)
+            {
+                if (auto* layoutButton = dynamic_cast<TLayoutSwitchButton*>(safeTarget.getComponent()))
+                {
+                    layoutButton->setToggleState(false, dontSendNotification);
+                    layoutButton->repaint();
+                }
+            }
+            //
+            if (_result == 1)
+                setLayout(TLayoutKind::russian);
+            else if (_result == 2)
+                setLayout(TLayoutKind::english);
+        });
 }
 //
 void TVirtualKeyboard::handleKeyButtonClick(TVirtualKeyButton* _button)
@@ -296,12 +381,6 @@ void TVirtualKeyboard::handleKeyButtonClick(TVirtualKeyButton* _button)
         if (FOnCapsLockToggle != nullptr)
             FOnCapsLockToggle();
         //
-        return;
-    }
-    //
-    if (_button->FKind == TKeyKind::layoutSwitchKey)                // НОВОЕ
-    {
-        switchLayout();
         return;
     }
     //
